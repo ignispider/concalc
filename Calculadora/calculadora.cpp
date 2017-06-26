@@ -346,23 +346,30 @@ int main ()
 					cout << "Ajuda ainda nao disponivel... :(\n";
 				else if (t.name == "var")
 					result = declaration ();
-				else if (t.name == "history")
+				else if (t.name == "historico")
 					expression.print_history ();
+				else
+					std::cerr << "Comando desconhecido: " << t.name << '\n';
+				
 
+				input.clean ();
 				prompt ();
 				break;
 
 			case end_expression:
 			{
 				string expression_str = expression.str ();
-				expression_str += " = ";
-				expression_str += double_to_string (result);
-				result = 0.0;
-				expression.add_to_history (expression_str);
-				cout << expression_str << '\n';
+				if (expression_str.size ())
+				{
+					expression_str += " = ";
+					expression_str += double_to_string (result);
+					expression.add_to_history (expression_str);
+					cout << expression_str << '\n';
+				}
+
 				input.clean ();
 				expression.clean ();
-				
+				result = 0.0;
 				prompt ();
 			}
 				break;

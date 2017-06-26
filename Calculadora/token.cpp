@@ -9,6 +9,7 @@
 using std::cout;
 using std::cin;
 
+// Objeto padrão usado no programa
 Token_stream input;
 
 bool isoperator (char c)
@@ -64,16 +65,27 @@ void Token_stream::read_console ()
 	while (isspace (cin.peek ()))
 		cin.ignore ();
 	
-	while (cin.peek () != end_expression &&
-		   cin.peek () != '\n')
+	if (cin.peek () == command)
 	{
 		input_stream << (char)cin.get ();
+		while (isalpha (cin.peek ()))
+		{
+			input_stream << (char)cin.get ();
+		}
 	}
-
-	if (cin.get () == end_expression)
-		input_stream << end_expression;
 	else
-		cin.putback ('\n');
+	{
+		while (cin.peek () != end_expression &&
+			   cin.peek () != '\n')
+		{
+			input_stream << (char)cin.get ();
+		}
+
+		if (cin.get () == end_expression)
+			input_stream << end_expression;
+		else
+			cin.putback ('\n');
+	}
 }
 
 Token Token_stream::get ()
@@ -110,6 +122,14 @@ Token Token_stream::get ()
 		double d{};
 		input_stream >> d;
 
+		if (!input_stream.good ())
+		{
+			if (input_stream.fail ())
+				throw InputError ("Literal invalido.", str ());
+			else if (input_stream.bad ())
+				throw InputError ("Falha na leitura da expressao.", str ());
+		}
+		
 		t = Token (number, d);
 	}
 	return t;
