@@ -75,7 +75,7 @@ public:
 	// Retorna a expressão inserida no console como uma string
 	string str () const;
 	// Limpa o objeto Token_stream
-	void clean ();
+	void clear ();
 
 private:
 	// Lê o console e armazena a entrada

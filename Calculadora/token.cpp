@@ -156,6 +156,13 @@ Token Token_stream::get ()
 
 	default:
 	{
+		if (!isascii (c))
+		{
+			string s = "Caractere invalido: ";
+			s += c;
+			throw InputError (s, str ());
+		}
+
 		string what = "Termo invalido: '";
 		string s;
 		while (!isoperator (c) && !isspace (c) && !isdigit (c) && c != EOF)
@@ -224,7 +231,7 @@ string Token_stream::str () const
 	return input_stream.str ();
 }
 
-void Token_stream::clean ()
+void Token_stream::clear ()
 {
 	empty_buffer = true;
 	input_stream = stringstream ();

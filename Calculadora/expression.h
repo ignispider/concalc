@@ -54,8 +54,10 @@ public:
 	void add_to_history (const string&);
 	// Exibe o histórico de expressões na forma de string
 	void print_history ();
+	// Limpa o histórico
+	void clear_history ();
 	// Limpa a lista de expressões
-	void clean ();
+	void clear ();
 	// Avalia a sintaxe do Token
 	void parse (const Token&);
 

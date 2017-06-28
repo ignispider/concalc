@@ -32,7 +32,6 @@ Expression::Expression ()
 }
 
 Token Expression::get ()
-try
 {
 	Token t;
 	if (expression_index == expression_stream.end ())
@@ -46,13 +45,6 @@ try
 
 	return t;
 }
-catch (const InputError &ie)
-{
-	ExpressionError ee (ie.what(), ie.input);
-	input.clean ();
-	clean ();
-	throw ee;
-}
 
 void Expression::operator>> (Token &t)
 {
@@ -60,7 +52,6 @@ void Expression::operator>> (Token &t)
 }
 
 Token Expression::peek ()
-try
 {
 	Token t;
 	if (expression_index == expression_stream.end ())
@@ -72,13 +63,6 @@ try
 		t = *expression_index;
 
 	return t;
-}
-catch (const InputError &ie)
-{
-	ExpressionError ee (ie.what (), ie.input);
-	input.clean ();
-	clean ();
-	throw ee;
 }
 
 void Expression::pushback (const Token &t)
@@ -112,8 +96,6 @@ void Expression::parse (const Token &t)
 	if (t.token == '=' ||
 		t.token == command)
 	{
-		input.clean ();
-		clean ();
 		string what = "Operador inesperado: '";
 		what += t.token;
 		what += "'.";
@@ -135,8 +117,6 @@ void Expression::parse (const Token &t)
 			what += t.token;
 			what += "'.";
 
-			input.clean ();
-			clean ();
 			throw ExpressionError (what, exp);
 		}
 
@@ -165,8 +145,6 @@ void Expression::parse (const Token &t)
 
 			what += "'.";
 
-			input.clean ();
-			clean ();
 			throw ExpressionError (what, exp);
 
 		//case '+': case '-': case '*': case '/':
@@ -281,8 +259,6 @@ void Expression::parse (const Token &t)
 	what += (left_operand_missing ? t.token : previous->token);
 	what += "'.";
 
-	input.clean ();
-	clean ();
 	throw ExpressionError (what, exp);
 }
 
@@ -399,7 +375,12 @@ void Expression::print_history ()
 	}
 }
 
-void Expression::clean ()
+void Expression::clear_history ()
+{
+	history.clear ();
+}
+
+void Expression::clear ()
 {
 	expression_stream.clear ();
 	expression_index = expression_stream.begin ();

@@ -1,22 +1,28 @@
 /*
-	Calculadora		Realiza operações matemáticas e lógicas no console
-	Versão: 0.2
+	Calculadora		Realiza operações matemáticas e binária no console
+	Versão: (alfa - 0.3)
 
 	TODO:
-	- Implementar a parte de operações lógicas
 	- Criar opcões de comandos para:
 		- Encerrar o programa				[V]
 		- Exibir resultado parcial			[X]
 		- Criar variáveis					[V]
-		- Exibir lista de variáveis			[X]
-		- Limpar lista de variáveis			[X]
+		- Modificar o valor de um variável	[X]
+		- Exibir a lista de variáveis		[V]
+		- Limpar a lista de variáveis		[V]
 		- Exibir histórico de expressões	[V]
-		- Limpar histórico de expressões	[X]
+		- Limpar histórico de expressões	[V]
+	- Implementar a parte de operações lógicas
+	- Ampliar os resultados do tipo double para long double
+	- Usar um conjunto de caracteres que suporte acentos
 
 	Criado da criação: 01/06/2017
 	Desenvolvido por: Ignispider
 
 	Changelog:
+	* 25/06/2017 *
+	- Correção de bugs
+
 	* 20/06/2017 *
 	- Correção de bugs
 
@@ -34,7 +40,7 @@
 	  e consequentemente todas as funções dentro do objeto que lidam com
 	  entrada não manipulam o objeto cin diretamente, com exceção da
 	  função read_input que lê o console e armazena a entrada no objeto
-	  stringstream expression_string.
+	  stringstream expression_string
 */
 
 #include <iostream>
@@ -43,7 +49,7 @@
 using std::cout;
 using std::cin;
 
-double calculate_expression ();
+
 
 // Realiza a operação Mod '%' em valores inteiros e não inteiros
 double modulo (double dividend, double divisor)
@@ -53,25 +59,41 @@ double modulo (double dividend, double divisor)
 	return dividend - (quotient * divisor);
 }
 
+// Apesar da função factorial receber um double o cálculo é baseado
+// em números inteiros. Para retornar um resultado correto a função
+// chamadora verifica se o argumento não possui parte decimal
 double factorial (double n)
 {
-
-	if (n < 0.0)
+	// No futuro a função pode ser melhorada para realizar o cálculo
+	// em números não inteiros
+	if (n > 1.0)
 	{
-		//ts.setflag (invalid_expression);
-		string exp = input.str ();
-		input.clean ();
-		expression.clean ();
-		throw ExpressionError ("Fatorial de numero negativo.", exp);
+		double result = n;
+		while (n > 1.0)
+			result *= --n;
+
+		return result;
 	}
 	else if (n == 0.0 || n == 1.0)
+	{
 		return 1.0;
+	}
+	else
+		throw ExpressionError ("Fatorial de numero negativo.", input.str ());
 
-	double result = n;
-	while(n > 1)
-		result *= --n;
+}
 
-	return result;
+void print_variables ()
+{
+	for each (Variable var in variables)
+	{
+		cout << '$' << var.name << " = " << var.value << '\n';
+	}
+}
+
+void clear_variables ()
+{
+	variables.clear ();
 }
 
 bool get_variable (const string &s, double *d = nullptr)
@@ -116,44 +138,26 @@ double primary ()
 
 	case '(':
 	{
-		value = calculate_expression ();
+		value = arithimetic_additive ();
 		expression >> t;
 		if (t.token != ')')
-		{
-			ExpressionError ee ("')' esperado.", input.str ());
-			input.clean ();
-			expression.clean ();
-			throw ee;
-		}
+			throw ExpressionError ("')' esperado.", input.str ());
 	}
 	break;
 
 	case ')':
-	{
-		ExpressionError ee ("'(' esperado.", input.str ());
-		input.clean ();
-		expression.clean ();
-		throw ee;
-	}
+		throw ExpressionError ("'(' esperado.", input.str ());
 
 	case variable:
 		if (!get_variable (t.name, &value))
-		{
-			ExpressionError ee ("Variavel '" + t.name + "' nao declarada.", input.str ());
-			input.clean ();
-			expression.clean ();
-			throw ee;
-		}
+			throw ExpressionError ("Variavel '" + t.name + "' nao declarada.", input.str ());
+
 		break;
 
 	case function:
 		if (!get_function (t.name, &value))
-		{
-			ExpressionError ee ("Funcao '" + t.name + "' nao declarada.", input.str ());
-			input.clean ();
-			expression.clean ();
-			throw ee;
-		}
+			throw ExpressionError ("Funcao '" + t.name + "' nao declarada.", input.str ());
+
 		break;
 	}
 
@@ -161,12 +165,8 @@ double primary ()
 	if (t.token == '!')
 	{
 		if (value - static_cast<long long>(value) != 0.0)
-		{
-			ExpressionError ee ("O operando de '!' deve ser de tipo inteiro.", input.str ());
-			input.clean ();
-			expression.clean ();
-			throw ee;
-		}
+			throw ExpressionError ("O operando de '!' deve ser de tipo inteiro.", input.str ());
+
 		value = factorial (value);
 	}
 	else
@@ -175,7 +175,7 @@ double primary ()
 	return (negative ? -value : value);
 }
 
-double sub2 ()
+double arithmetic_multiplicative ()
 {
 	double value = primary ();
 
@@ -185,47 +185,23 @@ double sub2 ()
 		expression >> t;
 		switch (t.token)
 		{
-		case '^':
-			value = pow (value, primary ());
-			break;
-
-		default:
-			expression.putback (t);
-			return value;
-		}
-	}
-}
-
-double sub1 ()
-{
-	double value = sub2 ();
-
-	Token t;
-	while (true)
-	{
-		expression >> t;
-		switch (t.token)
-		{
 		case '*':
-			value *= sub2 ();
+			value *= primary ();
 			break;
 
 		case '/':
 		{
-			double d = sub2 ();
+			double d = primary ();
 			if (d == 0)
 			{
-				ExpressionError ee ("Divisao por 0.", input.str ());
-				input.clean ();
-				expression.clean ();
-				throw ee;
+				throw ExpressionError ("Divisao por 0.", input.str ());
 			}
 			value /= d;
 		}
 		break;
 
 		case '%':
-			value = modulo (value, sub2 ());
+			value = modulo (value, primary ());
 			break;
 
 		default:
@@ -235,10 +211,10 @@ double sub1 ()
 	}
 }
 
-
-double calculate_expression ()
+// Calcula soma e subtração
+double arithimetic_additive ()
 {
-	double value = sub1 ();
+	double value = arithmetic_multiplicative ();
 
 	Token t;
 	while (true)
@@ -247,11 +223,11 @@ double calculate_expression ()
 		switch (t.token)
 		{
 		case '+':
-			value += sub1 ();
+			value += arithmetic_multiplicative ();
 			break;
 
 		case '-':
-			value -= sub1 ();
+			value -= arithmetic_multiplicative ();
 			break;
 
 		case end_expression:
@@ -294,7 +270,7 @@ double declaration ()
 		else
 		{
 			expression_str += " = ";
-			double d = calculate_expression ();
+			double d = arithimetic_additive ();
 			input >> t;
 			if (t.token == end_expression)
 			{
@@ -303,8 +279,8 @@ double declaration ()
 				variables.push_back (Variable (variable_name, d));
 
 				cout << "$" << variable_name << " = " << d << '\n';
-				input.clean ();
-				expression.clean ();
+				input.clear ();
+				expression.clear ();
 				
 				prompt ();
 				return d;
@@ -316,10 +292,7 @@ double declaration ()
 	else
 		expression_str = "A variavel '$" + t.name + "' ja foi declarada.";
 
-	ExpressionError ee (expression_str, input.str ());
-	input.clean ();
-	expression.clean ();
-	throw ee;
+	throw ExpressionError (expression_str, input.str ());
 }
 
 int main ()
@@ -344,15 +317,20 @@ int main ()
 					return EXIT_SUCCESS;
 				else if (t.name == "ajuda")
 					cout << "Ajuda ainda nao disponivel... :(\n";
-				else if (t.name == "var")
+				else if (t.name == "decl")
 					result = declaration ();
-				else if (t.name == "historico")
+				else if (t.name == "hist")
 					expression.print_history ();
+				else if (t.name == "lsvar")
+					print_variables ();
+				else if (t.name == "clrvar")
+					clear_variables ();
+				else if (t.name == "clrhist")
+					expression.clear_history ();
 				else
 					std::cerr << "Comando desconhecido: " << t.name << '\n';
 				
-
-				input.clean ();
+				input.clear ();
 				prompt ();
 				break;
 
@@ -367,8 +345,8 @@ int main ()
 					cout << expression_str << '\n';
 				}
 
-				input.clean ();
-				expression.clean ();
+				input.clear ();
+				expression.clear ();
 				result = 0.0;
 				prompt ();
 			}
@@ -376,7 +354,7 @@ int main ()
 
 			default:
 				input.putback (t);
-				result = calculate_expression ();
+				result = arithimetic_additive ();
 			}
 			
 		}
@@ -384,8 +362,8 @@ int main ()
 		{
 			std::cerr << "Entrada invalida: " << e.input << '\n';
 			std::cerr << e.what () << '\n';
-			input.clean ();
-			expression.clean ();
+			input.clear ();
+			expression.clear ();
 			
 			prompt ();
 		}
@@ -393,6 +371,8 @@ int main ()
 		{
 			std::cerr << "Erro na expressao: " << e.input << '\n';
 			std::cerr << e.what () << '\n';
+			expression.clear ();
+			input.clear ();
 			
 			prompt ();
 		}
